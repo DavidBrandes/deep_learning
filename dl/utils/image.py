@@ -1,13 +1,14 @@
-import torch
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
+
+from dl.utils import tensor as tensor_utils
 
 
 def to_tensor(img):
     img = np.transpose(img, (2, 0, 1))
     img = np.expand_dims(img, axis=0)
-    img = torch.tensor(img, dtype=torch.float32)
+    img = tensor_utils.tensor(img)
 
     return img
 

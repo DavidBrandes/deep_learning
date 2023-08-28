@@ -2,6 +2,9 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from dl.utils import tensor as tensor_utils
+
+
 
 class Content(nn.Module):
     def __init__(self, target, weight, slice):
@@ -12,7 +15,7 @@ class Content(nn.Module):
             target = target[slice]
 
         self.register_buffer('_target', target)
-        self.register_buffer('_weight', torch.tensor(weight))
+        self.register_buffer('_weight', tensor_utils.tensor(weight))
 
         self.loss = None
 
@@ -36,7 +39,7 @@ class Style(nn.Module):
             target = target[slice]
 
         self.register_buffer('_target', self._gram_matrix(target))
-        self.register_buffer('_weight', torch.tensor(weight))
+        self.register_buffer('_weight', tensor_utils.tensor(weight))
 
         self.loss = None
 
@@ -64,7 +67,7 @@ class Dream(nn.Module):
         super().__init__()
 
         self._slice = slice
-        self.register_buffer('_weight', torch.tensor(weight))
+        self.register_buffer('_weight', tensor_utils.tensor(weight))
 
         self.loss = None
 
@@ -116,7 +119,7 @@ class Model:
     def __call__(self, x):
         self._model(x)
 
-        x = torch.tensor([0], dtype=x.dtype, device=x.device)
+        x = tensor_utils.tensor([0], device=x.device)
 
         for module in self._modules:
             x += module.loss
