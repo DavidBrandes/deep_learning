@@ -1,14 +1,20 @@
-from dl.utils import image as image_utils
-from dl.transform.image import RandomTransformation
-
 import torch
-    
-    
-img_path = "/Users/david/Desktop/image0.jpeg"
+import numpy as np
+np.random.seed(1001)
 
-img1 = image_utils.load_image(img_path)
-t = RandomTransformation(sigmoid=False, randomness=2)
-img2 = t(img1)
-print(img1.shape, img2.shape)
-print(torch.mean(torch.abs(img1 - img2)))
-image_utils.show_image(img2)
+from dl.parameter.image import FourierParameterization
+from dl.utils import tensor as tensor_utils
+
+
+
+x = np.abs(np.random.randn(1, 3, 7, 8))
+x = np.clip(x, 1e-4, 1 - 1e-4)
+
+x_ = tensor_utils.tensor(x)
+f = FourierParameterization()
+y_ = f.parameterize(x_)
+xx_ = f(y_)
+xx = xx_.numpy()
+
+print(x.shape, xx.shape)
+print(np.max(np.abs(x - xx)))

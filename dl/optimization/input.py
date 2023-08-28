@@ -5,14 +5,14 @@ from dl.optimization.context import RunContext
 
 class Optimizer:
     def __init__(self, model, optimizer, optimizer_kwargs={}, parameterization=None,
-                 transformation=None, normalization=None, epochs=250, callback=None, 
+                 transformation=None, clipping=None, epochs=250, callback=None, 
                  device="cpu", leave=True):
         self._model = model.to(device)
         self._optimizer = optimizer
 
         self._parameterization = parameterization
         self._transformation = transformation
-        self._normalization = normalization
+        self._clipping = clipping
 
         self._optimizer_kwargs = optimizer_kwargs
         self._device = device
@@ -29,8 +29,6 @@ class Optimizer:
         return x
 
     def __call__(self, x):
-        if self._normalization:
-            x = self._normalization.parameterize(x)
         if self._parameterization:
             x = self._parameterization.parameterize(x)
 
@@ -54,8 +52,8 @@ class Optimizer:
                     x_ = self._parameterization(x_)
                 if self._transformation:
                     x_ = self._transformation(x_)
-                if self._normalization:
-                    x_ = self._normalization(x_)
+                if self._clipping:
+                    x_ = self._clipping(x_)
                 
                 loss = self._model(x_)
                 

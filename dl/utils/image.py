@@ -49,7 +49,8 @@ def random_image(shape, seed=1001):
 
     rng = np.random.default_rng(seed)
 
-    img = rng.uniform(0, 1, shape + (3,))
+    img = rng.normal(0.5, 0.01, shape + (3,))
+    img = np.clip(img, 0, 1)
     img = to_tensor(img)
 
     return img

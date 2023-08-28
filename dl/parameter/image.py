@@ -4,6 +4,7 @@ import numpy as np
 from dl.utils import tensor as tensor_utils
 
 # Taken from https://github.com/tensorflow/lucid/blob/master/lucid/optvis/param/color.py
+
 color_correlation_svd_sqrt = np.asarray([[0.26, 0.09, 0.02],
                                          [0.27, 0.00, -0.05],
                                          [0.27, -0.09, 0.03]])
@@ -16,60 +17,66 @@ M_inv = np.linalg.inv(color_correlation_normalized).T
 
 
 class FourierParameterization:
-    def __init__(self, fft=True, whiten=True):
-        self._fft = fft
-        self._whiten = whiten
+    def __init__(self):
+        self._clamping_eps = 1e-6
         
-        self._s = None
+    def _compute_scale(self, x):
+        (w, h) = x.shape[2:]
+        
+        fy = np.fft.fftfreq(w)[:, None]
+        fx = np.fft.fftfreq(h)[: h // 2 + 1]
+        f = np.sqrt(fx * fx + fy * fy)
+        
+        scale = 1.0 / np.maximum(f, 1.0 / max(w, h))
+        scale *= np.sqrt(w * h)
+
+        self._scale = tensor_utils.tensor(scale, device=x.device)
 
     def parameterize(self, x):
-        if self._whiten:
-            n, c, w, h = x.shape
-            x = torch.transpose(x, 0, 1).view(3, -1).t()
-            torch.matmul(x, tensor_utils.tensor(M_inv, device=x.device))
-            x = torch.transpose(x.t().view((3, n, w, h)), 0, 1)
-            
-        if self._fft:
-            self._s = x.shape[-2:]
-            x = torch.fft.rfft2(x)
-            
+        if x.shape[-1] % 2 == 1:
+            raise Exception('Case not implemented')
+        
+        self._compute_scale(x)
+        
+        # normalize
+        # clamping first to avoid infs and normalize
+        x = torch.clamp(x, self._clamping_eps, 1 - self._clamping_eps)
+        x = torch.logit(x)
+                
+        # decorelate colors
+        b, c, w, h = x.shape
+        x = torch.transpose(x, 0, 1).view(3, -1).t()
+        x = torch.matmul(x, tensor_utils.tensor(M_inv, device=x.device))
+        x = torch.transpose(x.t().view((c, b, w, h)), 0, 1)
+        
+        # into fourier space
+        x = 4 * x
+        x = torch.fft.rfft2(x)
+        x = x / self._scale
+        
         return x
 
     def __call__(self, x):
-        if self._fft:
-            x = torch.fft.irfft2(x, s=self._s)
-            
-        if self._whiten:
-            n, c, w, h = x.shape
-            x = torch.transpose(x, 0, 1).view(3, -1).t()
-            torch.matmul(x, tensor_utils.tensor(M, device=x.device))
-            x = torch.transpose(x.t().view((3, n, w, h)), 0, 1)
+        # from fourier space
+        x = x * self._scale
+        x = torch.fft.irfft2(x)
+        x = x / 4
+        
+        # into correlated color space
+        b, c, w, h = x.shape
+        x = torch.transpose(x, 0, 1).view(3, -1).t()
+        x = torch.matmul(x, tensor_utils.tensor(M, device=x.device))
+        x = torch.transpose(x.t().view((c, b, w, h)), 0, 1)
+        
+        # denormalize
+        x = torch.sigmoid(x)
             
         return x
     
     
-class Normalization:
-    def __init__(self, sigmoid=True, clip=True):
-        self._sigmoid = sigmoid
-        self._clip = clip
-
-        self._eps = 1e-6
-
-    def parameterize(self, x):
-        if self._sigmoid:
-            # clipping to avoid nans
-            x = torch.clamp(x, self._eps, 1 - self._eps)
-            x = torch.logit(x)
-        elif self._clip:
-            x = torch.clip(x, 0, 1)
-
-        return x
-
+class Clipping:
     def __call__(self, x):
-        if self._sigmoid:
-            x = torch.sigmoid(x)
-        elif self._clip:
-            # non inplace clipping produces bad results
-            x.data.clamp_(0, 1)
+        # non inplace clipping produces bad results
+        x.data.clamp_(0, 1)
 
         return x
