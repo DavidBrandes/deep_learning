@@ -6,7 +6,7 @@ from dl.utils import image as image_utils
 from dl.model.vgg import get_model
 from dl.model.input import Style, Dream, Content, Model
 from dl.transform.image import RandomTransformation
-from dl.parameter.image import FourierParameterization, ImageParameterization
+from dl.parameter.image import FourierParameterization, Normalization
 from dl.optimization.input import Optimizer
 
 
@@ -18,7 +18,7 @@ output_img_path = "/Users/david/Downloads/output.png"
 EPOCHS = 10
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 OPTIMIZER_KWARGS = {"lr": 0.05}
-SHAPE = 256
+SHAPE = (101, 151)
 
 transform = transforms.Resize(SHAPE)
 
@@ -42,16 +42,15 @@ modules = [(Content, 'relu3_2', content_img, 1, None),
            (Style, 'relu5_1', style_img, 2000, None),]
 
 vgg = get_model()
-# TODO remove clip and sigmoid ?
-# TODO add in fft
-# TODO make kornia work with non quadratic imgs
+normalization = Normalization(sigmoid=False, clip=True)
 transformation = RandomTransformation()
-parameterization = FourierParameterization()
+parameterization = FourierParameterization(fft=False, whiten=False)
 
 model = Model(vgg, modules)
 optimizer = Optimizer(model, Adam, optimizer_kwargs=OPTIMIZER_KWARGS, 
                       parameterization=parameterization, transformation=transformation,
-                      epochs=EPOCHS, callback=callback, device=DEVICE, leave=False)
+                      normalization=normalization, epochs=EPOCHS, callback=callback, device=DEVICE, 
+                      leave=False)
 
 output_img = optimizer(input_img)
 

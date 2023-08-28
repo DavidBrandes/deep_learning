@@ -1,15 +1,11 @@
 import kornia
 import numpy as np
-import torch
 
 from dl.utils import tensor as tensor_utils
 
 
 class RandomTransformation:
-    def __init__(self, randomness=1, seed=1001, clip=True, sigmoid=True):
-        self._clip = clip
-        self._sigmoid = sigmoid
-        
+    def __init__(self, randomness=1, seed=1001):
         self._randomness = randomness
         self._rng = np.random.default_rng(seed)
     
@@ -26,12 +22,5 @@ class RandomTransformation:
         x = kornia.geometry.transform.translate(x, translation, padding_mode="reflection")
         x = kornia.geometry.transform.scale(x, scale, padding_mode="reflection")
         x = kornia.geometry.transform.rotate(x, angle, padding_mode="reflection")
-        
-        if self._sigmoid:
-            x = torch.sigmoid(x)
-        
-        elif self._clip:
-            # non inplace clipping produces bad results
-            x.data.clamp_(0, 1)
 
         return x
