@@ -3,7 +3,7 @@ import numpy as np
 
 from dl.utils import tensor as tensor_utils
 
-# Taken from https://github.com/tensorflow/lucid/blob/master/lucid/optvis/param/color.py
+# Taken from https://github.com/tensorflow/lucid/blob/master/lucid/optvis/param
 
 color_correlation_svd_sqrt = np.asarray([[0.26, 0.09, 0.02],
                                          [0.27, 0.00, -0.05],
@@ -20,7 +20,7 @@ class FourierParameterization:
     def __init__(self):
         self._clamping_eps = 1e-6
         
-    def _compute_scale(self, x):
+    def _set_params(self, x):
         (w, h) = x.shape[2:]
         
         fy = np.fft.fftfreq(w)[:, None]
@@ -31,12 +31,10 @@ class FourierParameterization:
         scale *= np.sqrt(w * h)
 
         self._scale = tensor_utils.tensor(scale, device=x.device)
-
+        self._size = (w, h)
+    
     def parameterize(self, x):
-        if x.shape[-1] % 2 == 1:
-            raise Exception('Case not implemented')
-        
-        self._compute_scale(x)
+        self._set_params(x)
         
         # normalize
         # clamping first to avoid infs and normalize
@@ -59,7 +57,7 @@ class FourierParameterization:
     def __call__(self, x):
         # from fourier space
         x = x * self._scale
-        x = torch.fft.irfft2(x)
+        x = torch.fft.irfft2(x, s=self._size)
         x = x / 4
         
         # into correlated color space

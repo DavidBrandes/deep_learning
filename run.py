@@ -18,7 +18,7 @@ output_img_path = "/Users/david/Downloads/output.png"
 EPOCHS = 10
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 OPTIMIZER_KWARGS = {"lr": 0.05}
-SHAPE = (101, 150)
+SHAPE = (101, 151)
 
 transform = transforms.Resize(SHAPE)
 
