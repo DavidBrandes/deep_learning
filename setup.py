@@ -11,7 +11,7 @@ setup(
     install_requires=[
         'kornia==0.7.0',
         'matplotlib==3.7.1',
-        'numpy==1.22',
+        'numpy==1.23.5',
         'pillow==9.4.0',
         'torch==2.0.1',
         'torchvision==0.15.2'
