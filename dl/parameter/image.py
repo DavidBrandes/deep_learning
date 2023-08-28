@@ -30,7 +30,7 @@ class FourierParameterization:
         scale = 1.0 / np.maximum(f, 1.0 / max(w, h))
         scale *= np.sqrt(w * h)
 
-        self._scale = tensor_utils.tensor(scale, device=x.device)
+        self._scale = scale
         self._size = (w, h)
     
     def parameterize(self, x):
@@ -50,13 +50,13 @@ class FourierParameterization:
         # into fourier space
         x = 4 * x
         x = torch.fft.rfft2(x)
-        x = x / self._scale
+        x = x / tensor_utils.tensor(self._scale, device=x.device)
         
         return x
 
     def __call__(self, x):
         # from fourier space
-        x = x * self._scale
+        x = x * tensor_utils.tensor(self._scale, device=x.device)
         x = torch.fft.irfft2(x, s=self._size)
         x = x / 4
         
