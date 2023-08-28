@@ -9,15 +9,19 @@ class RandomTransformation:
         self._randomness = randomness
         self._rng = np.random.default_rng(seed)
     
-    def _get_random_values(self):
+    def _get_random_values(self, device):
         translation = self._rng.uniform(-3 * self._randomness, 3 * self._randomness, (1, 2))
         scale = self._rng.uniform(1 - 0.01 * self._randomness, 1 + 0.01 * self._randomness, (1, 2))
         angle = self._rng.uniform(-1 * self._randomness, 1 * self._randomness, (1,))
+
+        translation = tensor_utils.tensor(translation, device=device)
+        scale = tensor_utils.tensor(scale, device=device)
+        angle = tensor_utils.tensor(angle, device=device)
         
-        return tensor_utils.tensor(translation), tensor_utils.tensor(scale), tensor_utils.tensor(angle)
+        return translation, scale, angle
             
     def __call__(self, x):
-        translation, scale, angle = self._get_random_values()
+        translation, scale, angle = self._get_random_values(x.device)
         
         x = kornia.geometry.transform.translate(x, translation, padding_mode="reflection")
         x = kornia.geometry.transform.scale(x, scale, padding_mode="reflection")
