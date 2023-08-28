@@ -4,7 +4,7 @@ import torch
 
 from dl.utils import image as image_utils
 from dl.model.vgg import get_model
-from dl.model.input import Style, Dream, Content, Model
+from dl.model.input import Style, Dream, Content, Model, Activation
 from dl.transform.image import RandomTransformation
 from dl.parameter.image import FourierParameterization, Clipping
 from dl.optimization.input import Optimizer

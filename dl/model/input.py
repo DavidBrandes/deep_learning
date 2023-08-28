@@ -5,7 +5,6 @@ from torch.nn import functional as F
 from dl.utils import tensor as tensor_utils
 
 
-
 class Content(nn.Module):
     def __init__(self, target, weight, slice):
         super().__init__()
@@ -44,12 +43,12 @@ class Style(nn.Module):
         self.loss = None
 
     def _gram_matrix(self, x):
-        n, c, w, h = x.size()
-        features = x.view(n * c, w * h)
+        b, c, w, h = x.size()
+        features = x.view(b * c, w * h)
 
         G = torch.mm(features, features.t())
 
-        return G.div(n * c * w * h)
+        return G.div(b * c * w * h)
 
     def forward(self, x):
         if self._slice:
@@ -113,14 +112,14 @@ class Model:
 
             i += 1
 
-            for module, append_layer, target, weight, slice in modules:
+            for Module, append_layer, target, weight, slice in modules:
                 if append_layer == layer_name:
                     if target is not None:
                         target = self._model(target).detach()
                     if weight is None:
                         weight = 1
 
-                    module = module(target, weight, slice)
+                    module = Module(target, weight, slice)
 
                     self._model.add_module(f'{append_layer}_append_{i+1}', module)
                     print(f"Added {type(module).__name__} module to layer {append_layer}")

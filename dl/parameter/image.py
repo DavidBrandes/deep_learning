@@ -11,7 +11,7 @@ color_correlation_svd_sqrt = np.asarray([[0.26, 0.09, 0.02],
 max_norm_svd_sqrt = np.max(np.linalg.norm(color_correlation_svd_sqrt, axis=0))
 color_correlation_normalized = color_correlation_svd_sqrt / max_norm_svd_sqrt
 
-# x_correlated = x_incorrelated @ M
+# x_correlated = x_uncorrelated @ M
 M = color_correlation_normalized.T
 M_inv = np.linalg.inv(color_correlation_normalized).T
 
@@ -19,6 +19,9 @@ M_inv = np.linalg.inv(color_correlation_normalized).T
 class FourierParameterization:
     def __init__(self):
         self._clamping_eps = 1e-6
+        
+        self._scale = None
+        self._size = None
         
     def _set_params(self, x):
         (w, h) = x.shape[2:]
@@ -37,7 +40,7 @@ class FourierParameterization:
         self._set_params(x)
         
         # normalize
-        # clamping first to avoid infs and normalize
+        # clamping first to avoid infs
         x = torch.clamp(x, self._clamping_eps, 1 - self._clamping_eps)
         x = torch.logit(x)
                 
