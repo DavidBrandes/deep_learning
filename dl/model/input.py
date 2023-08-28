@@ -80,6 +80,26 @@ class Dream(nn.Module):
         self.loss = self._weight * torch.mean(x_**2)
 
         return x
+    
+    
+class Activation(nn.Module):
+    def __init__(self, target, weight, slice):
+        super().__init__()
+
+        self._slice = slice
+        self.register_buffer('_weight', tensor_utils.tensor(weight))
+
+        self.loss = None
+
+    def forward(self, x):
+        if self._slice:
+            x_ = x[self._slice]
+        else:
+            x_ = x
+
+        self.loss = self._weight * torch.mean(x_)
+
+        return x
 
 
 class Model:
