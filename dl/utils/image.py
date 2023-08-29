@@ -59,7 +59,7 @@ def random_image(shape, seed=1001):
 def show_image(img):
     img = from_tensor(img)
     
-    plt.axis("off")
     plt.figure(figsize=(7, 7))
     plt.imshow(img)
+    plt.axis("off")
     plt.show()
