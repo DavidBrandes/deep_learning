@@ -75,7 +75,7 @@ class FourierParameterization:
         return x
     
     
-class Clipping:
+class UnitClipping:
     def __call__(self, x):
         # non inplace clipping produces bad results
         x.data.clamp_(0, 1)

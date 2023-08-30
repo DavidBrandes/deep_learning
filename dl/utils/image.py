@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 
-from dl.utils import tensor as tensor_utils
+from dl.utils import tensor as tensor_utils, generic as generic_utils
 
 
 def to_tensor(img):
@@ -42,10 +42,7 @@ def save_image(path, img):
 
 
 def random_image(shape, seed=1001):
-    if type(shape) is int:
-        shape = (shape, shape)
-    elif type(shape) is tuple and len(shape) == 1:
-        shape = shape + shape
+    shape = generic_utils.convert_to_shape(shape)
 
     rng = np.random.default_rng(seed)
 

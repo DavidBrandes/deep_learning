@@ -3,10 +3,10 @@ from torchvision import transforms
 import torch
 
 from dl.utils import image as image_utils
-from dl.model.vgg import get_model
-from dl.model.input import Style, Dream, Content, Model, Activation
+from dl.model.pretrained import get_vgg19_model, get_googlenet_model
+from dl.model.input import StyleModule, DreamModule, ContentModule, InputModel, ActivationModule
 from dl.transform.image import RandomTransformation
-from dl.parameter.image import FourierParameterization, Clipping
+from dl.parameter.image import FourierParameterization, UnitClipping
 from dl.optimization.input import Optimizer
 
 
@@ -33,20 +33,22 @@ def callback(epoch, loss, img):
 
 
 # module, append layer name, target, weight, slice
-# modules = [(Dream, "relu5_1", None, None, None)]
-modules = [(Content, 'relu3_2', content_img, 1, None),
-           (Style, 'relu1_1', style_img, 2000, None),
-           (Style, 'relu2_1', style_img, 2000, None),
-           (Style, 'relu3_1', style_img, 2000, None),
-           (Style, 'relu4_1', style_img, 2000, None),
-           (Style, 'relu5_1', style_img, 2000, None),]
+# modules = [(DreamModule, "relu5_1", None, None, None)]
+modules = [(DreamModule, "inception4b", None, None, None)]
+# modules = [(ContentModule, 'relu3_2', content_img, 1, None),
+#            (StyleModule, 'relu1_1', style_img, 2000, None),
+#            (StyleModule, 'relu2_1', style_img, 2000, None),
+#            (StyleModule, 'relu3_1', style_img, 2000, None),
+#            (StyleModule, 'relu4_1', style_img, 2000, None),
+#            (StyleModule, 'relu5_1', style_img, 2000, None),]
 
-vgg = get_model()
-clipping = Clipping()
+# vgg19 = get_vgg19_model()
+googlenet = get_googlenet_model()
+clipping = UnitClipping()
 transformation = RandomTransformation()
 parameterization = FourierParameterization()
 
-model = Model(vgg, modules)
+model = InputModel(googlenet, modules)
 optimizer = Optimizer(model, Adam, optimizer_kwargs=OPTIMIZER_KWARGS, 
                       parameterization=parameterization, transformation=transformation,
                       clipping=clipping, epochs=EPOCHS, callback=callback, device=DEVICE, 

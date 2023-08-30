@@ -5,7 +5,7 @@ from torch.nn import functional as F
 from dl.utils import tensor as tensor_utils
 
 
-class Content(nn.Module):
+class ContentModule(nn.Module):
     def __init__(self, target, weight, slice):
         super().__init__()
         
@@ -29,7 +29,7 @@ class Content(nn.Module):
         return x
 
 
-class Style(nn.Module):
+class StyleModule(nn.Module):
     def __init__(self, target, weight, slice):
         super().__init__()
         
@@ -61,7 +61,7 @@ class Style(nn.Module):
         return x
 
 
-class Dream(nn.Module):
+class DreamModule(nn.Module):
     def __init__(self, target, weight, slice):
         super().__init__()
 
@@ -81,7 +81,7 @@ class Dream(nn.Module):
         return x
     
     
-class Activation(nn.Module):
+class ActivationModule(nn.Module):
     def __init__(self, target, weight, slice):
         super().__init__()
 
@@ -102,7 +102,7 @@ class Activation(nn.Module):
         return x
 
 
-class Model:
+class InputModel:
     def __init__(self, model, modules):
         self._model = nn.Sequential()
         self._modules = []
