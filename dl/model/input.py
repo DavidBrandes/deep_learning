@@ -96,7 +96,8 @@ class Activation(nn.Module):
         else:
             x_ = x
 
-        self.loss = self._weight * torch.mean(x_)
+        # Using minus here as we actually want to maximize the activation
+        self.loss = -self._weight * torch.mean(x_)
 
         return x
 
