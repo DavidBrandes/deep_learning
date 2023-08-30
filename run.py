@@ -33,7 +33,7 @@ def callback(epoch, loss, img):
 
 
 # module, append layer name, target, weight, slice
-# modules = [(Dream, "relu5_1", None, -1, None)]
+# modules = [(Dream, "relu5_1", None, None, None)]
 modules = [(Content, 'relu3_2', content_img, 1, None),
            (Style, 'relu1_1', style_img, 2000, None),
            (Style, 'relu2_1', style_img, 2000, None),
