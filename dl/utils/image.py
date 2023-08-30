@@ -56,10 +56,12 @@ def random_image(shape, seed=1001):
     return img
 
 
-def show_image(img):
+def show_image(img, title=None, figsize=(7, 7)):
     img = from_tensor(img)
-    
-    plt.figure(figsize=(7, 7))
-    plt.imshow(img)
+
+    if title:
+        plt.title(title)
+    plt.figure(figsize=figsize)
     plt.axis("off")
+    plt.imshow(img)
     plt.show()
