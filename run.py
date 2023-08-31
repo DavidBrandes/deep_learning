@@ -26,7 +26,7 @@ output_img_path = "/Users/david/Downloads/output.png"
 style_img = image_utils.load_image(style_img_path)
 content_img = image_utils.load_image(content_img_path)
 
-(style_img, img3), shape = image_utils.max_image_crops([style_img, content_img], max_size=MAX_SHAPE)
+(style_img, content_img), shape = image_utils.max_image_crops([style_img, content_img], max_size=MAX_SHAPE)
 input_img = image_utils.random_image(shape)
 
 def callback(epoch, loss, img):
