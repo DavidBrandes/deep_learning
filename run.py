@@ -6,7 +6,7 @@ from dl.model.pretrained import get_vgg19_model, get_googlenet_model
 from dl.model.input import StyleModule, DreamModule, ContentModule, InputModel, ActivationModule
 from dl.transform.image import RandomTransformation
 from dl.parameter.image import FourierParameterization, UnitClipping
-from dl.optimization.input import Optimizer
+from dl.optimization.input import InputOptimizer
 
 
 style_img_path = "/Users/david/Downloads/style.jpeg"
@@ -50,7 +50,7 @@ transformation = RandomTransformation()
 parameterization = FourierParameterization()
 
 model = InputModel(vgg19, modules)
-optimizer = Optimizer(model, Adam, optimizer_kwargs=OPTIMIZER_KWARGS, 
+optimizer = InputOptimizer(model, Adam, optimizer_kwargs=OPTIMIZER_KWARGS, 
                       parameterization=parameterization, transformation=transformation,
                       clipping=clipping, epochs=EPOCHS, callback=callback, device=DEVICE, 
                       leave=False)

@@ -3,7 +3,7 @@ import torch
 from dl.optimization.context import RunContext
 
 
-class Optimizer:
+class InputOptimizer:
     def __init__(self, model, optimizer, optimizer_kwargs={}, parameterization=None,
                  transformation=None, clipping=None, epochs=250, callback=None, 
                  device="cpu", leave=True):
