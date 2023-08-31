@@ -1,5 +1,4 @@
 from torch.optim import Adam
-from torchvision import transforms
 import torch
 
 from dl.utils import image as image_utils
@@ -18,15 +17,17 @@ output_img_path = "/Users/david/Downloads/output.png"
 EPOCHS = 10
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 OPTIMIZER_KWARGS = {"lr": 0.05}
-SHAPE = (101, 151)
+MAX_SHAPE = 512
 
-transform = transforms.Resize(SHAPE)
+style_img_path = "/Users/david/Downloads/style.jpeg"
+content_img_path = "/Users/david/Downloads/content.jpeg"
+output_img_path = "/Users/david/Downloads/output.png"
 
-style_img = image_utils.load_image(style_img_path, transform=transform)
-content_img = image_utils.load_image(content_img_path, transform=transform)
-input_img = image_utils.load_image(input_img_path, transform=transform)
-# input_img = image_utils.random_image(SHAPE)
+style_img = image_utils.load_image(style_img_path)
+content_img = image_utils.load_image(content_img_path)
 
+(style_img, img3), shape = image_utils.max_image_crops([style_img, content_img], max_size=MAX_SHAPE)
+input_img = image_utils.random_image(shape)
 
 def callback(epoch, loss, img):
     image_utils.save_image(output_img_path, img)
