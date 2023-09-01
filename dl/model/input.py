@@ -68,7 +68,8 @@ class DreamModule(BaseModule):
         super().__init__(slice, weight, append_layer, debug)
         
     def _loss_function(self, x):
-        return torch.mean(x**2)
+        # we want to maximize the loss
+        return -torch.mean(x**2)
     
     
 class ActivationModule(BaseModule):
