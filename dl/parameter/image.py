@@ -47,26 +47,26 @@ class FourierParameterization:
         # decorelate colors
         b, c, w, h = x.shape
         x = torch.transpose(x, 0, 1).view(3, -1).t()
-        x = torch.matmul(x, tensor_utils.tensor(M_inv, device=x.device))
+        x = torch.matmul(x, tensor_utils.tensor(M_inv, dtype=x.dtype, device=x.device))
         x = torch.transpose(x.t().view((c, b, w, h)), 0, 1)
         
         # into fourier space
         x = 4 * x
         x = torch.fft.rfft2(x)
-        x = x / tensor_utils.tensor(self._scale, device=x.device)
+        x = x / tensor_utils.tensor(self._scale, dtype=x.dtype, device=x.device)
         
         return x
 
     def __call__(self, x):
         # from fourier space
-        x = x * tensor_utils.tensor(self._scale, device=x.device)
+        x = x * tensor_utils.tensor(self._scale, dtype=x.dtype, device=x.device)
         x = torch.fft.irfft2(x, s=self._size)
         x = x / 4
         
         # into correlated color space
         b, c, w, h = x.shape
         x = torch.transpose(x, 0, 1).view(3, -1).t()
-        x = torch.matmul(x, tensor_utils.tensor(M, device=x.device))
+        x = torch.matmul(x, tensor_utils.tensor(M, dtype=x.dtype, device=x.device))
         x = torch.transpose(x.t().view((c, b, w, h)), 0, 1)
         
         # denormalize

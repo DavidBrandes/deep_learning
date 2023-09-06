@@ -6,12 +6,16 @@ from dl.utils import tensor as tensor_utils
 
 
 class BaseModule(nn.Module):
-    def __init__(self, slice=None, weight=None, append_layer=None, debug=False):
+    def __init__(self, target=None, slice=None, weight=1, append_layer="UNNAMED", debug=False):
         super().__init__()
         
+        if target is not None:
+            if slice is not None:
+                target = target[slice]
+            self.register_buffer('_target', target)
         self._slice = slice
-        self.register_buffer('_weight', tensor_utils.tensor(weight if weight else 1))
-        self._append_layer = append_layer if append_layer else "UNNAMED"
+        self.register_buffer('_weight', tensor_utils.tensor(weight))
+        self._append_layer = append_layer
         self._debug = debug
         
         self.loss = None
@@ -25,19 +29,16 @@ class BaseModule(nn.Module):
         self.loss = self._weight * self._loss_function(x_)
         
         if self._debug:
-            print(f"    Module {self.__class__.__name__} at layer {self._append_layer},"
-                  f"loss: {self.loss:.4e}")
+            print(f"    Module {self.__class__.__name__} at layer {self._append_layer}:")
+            print(f"      Loss {self.loss.item():.4e}")
+            print(f"      Input {x.shape} -> Output {x_.shape}")
         
         return x
         
 
 class ContentModule(BaseModule):
     def __init__(self, target=None, slice=None, weight=1, append_layer="UNNAMED", debug=False):
-        super().__init__(slice, weight, append_layer, debug)
-        
-        if self._slice is not None:
-            target = target[self._slice]
-        self.register_buffer('_target', target)
+        super().__init__(target, slice, weight, append_layer, debug)
         
     def _loss_function(self, x):
         return F.l1_loss(x, self._target)
@@ -45,11 +46,7 @@ class ContentModule(BaseModule):
 
 class StyleModule(BaseModule):
     def __init__(self, target=None, slice=None, weight=1, append_layer="UNNAMED", debug=False):
-        super().__init__(slice, weight, append_layer, debug)
-        
-        if self._slice is not None:
-            target = target[self._slice]
-        self.register_buffer('_target', self._gram_matrix(target))
+        super().__init__(target, slice, weight, append_layer, debug)
 
     def _gram_matrix(self, x):
         b, c, w, h = x.size()
@@ -60,12 +57,12 @@ class StyleModule(BaseModule):
         return G.div(b * c * w * h)
     
     def _loss_function(self, x):
-        return F.l1_loss(self._gram_matrix(x), self._target)
+        return F.l1_loss(self._gram_matrix(x), self._gram_matrix(self._target))
 
 
 class DreamModule(BaseModule):
     def __init__(self, target=None, slice=None, weight=1, append_layer="UNNAMED", debug=False):
-        super().__init__(slice, weight, append_layer, debug)
+        super().__init__(target, slice, weight, append_layer, debug)
         
     def _loss_function(self, x):
         # we want to maximize the loss
@@ -74,7 +71,7 @@ class DreamModule(BaseModule):
     
 class ActivationModule(BaseModule):
     def __init__(self, target=None, slice=None, weight=1, append_layer="UNNAMED", debug=False):
-        super().__init__(slice, weight, append_layer, debug)
+        super().__init__(target, slice, weight, append_layer, debug)
         
     def _loss_function(self, x):
         # Using minus here as we actually want to maximize the activation
@@ -96,15 +93,13 @@ class InputModel:
                 if append_layer == layer_name:
                     if target is not None:
                         target = self._model(target).detach()
-                    if weight is None:
-                        weight = 1
 
-                    module = Module(target=target, slice=slice, weight=weight, 
-                                    append_layer=append_layer, debug=debug)
+                    module = Module(target, slice, weight, append_layer, debug)
+                    module_name = type(module).__name__
 
-                    self._model.add_module(f'{append_layer}_append_{i+1}', module)
-                    if verbose:
-                        print(f"Added {type(module).__name__} module to layer {append_layer}")
+                    self._model.add_module(f'{append_layer}_append_{module_name}_{i + 1}', module)
+                    if verbose or debug:
+                        print(f"Added {module_name} module to layer {append_layer}")
                     self._modules.append(module)
 
                     i += 1
@@ -120,7 +115,7 @@ class InputModel:
     def __call__(self, x):
         self._model(x)
 
-        x = tensor_utils.tensor([0], device=x.device, requires_grad=True)
+        x = tensor_utils.tensor([0], device=x.device, dtype=x.dtype, requires_grad=True)
 
         for module in self._modules:
             x = x + module.loss
