@@ -13,7 +13,9 @@ setup(
         'matplotlib==3.7.1',
         'numpy==1.23.5',
         'pillow==9.4.0',
+	'tensorboard==2.14.0'
         'torch==2.0.1',
-        'torchvision==0.15.2'
+        'torchvision==0.15.2',
+	'tqdm==4.66.1'
     ],
 )

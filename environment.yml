@@ -7,5 +7,7 @@ dependencies:
   - pillow=9.4.0
   - pytorch=2.0.1
   - torchvision=0.15.2
+  - tqdm=4.66.1
+  -.tensorboard=2.14.0
   - pip:
     - kornia==0.7.0
