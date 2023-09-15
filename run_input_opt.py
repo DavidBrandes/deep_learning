@@ -2,8 +2,8 @@ from torch.optim import Adam
 import torch
 
 from dl.utils import image as image_utils, tensor as tensor_utils
-from dl.model.pretrained import get_vgg19_model, get_googlenet_model
-from dl.model.input import StyleModule, DreamModule, ContentModule, InputModel, ActivationModule
+from dl.model.convolutional.pretrained import get_vgg19_model, get_googlenet_model
+from dl.model.input.input import StyleModule, DreamModule, ContentModule, InputModel, ActivationModule
 from dl.transform.image import RandomTransformation
 from dl.parameter.image import FourierParameterization, UnitClipping
 from dl.optimization.input import InputOptimizer

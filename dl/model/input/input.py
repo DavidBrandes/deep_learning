@@ -93,6 +93,9 @@ class InputModel:
                 if append_layer == layer_name:
                     if target is not None:
                         target = self._model(target).detach()
+                        
+                    if weight is None:
+                        weight = 1
 
                     module = Module(target, slice, weight, append_layer, debug)
                     module_name = type(module).__name__

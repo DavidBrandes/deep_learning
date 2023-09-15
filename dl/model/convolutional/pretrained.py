@@ -1,7 +1,7 @@
 from torch import nn
 from torchvision.models import vgg19, VGG19_Weights, googlenet, GoogLeNet_Weights
 
-from dl.model.generic import ImageNetNormalize
+from dl.model.convolutional.generic import ImageNetNormalize
 
 
 def get_vgg19_model():
