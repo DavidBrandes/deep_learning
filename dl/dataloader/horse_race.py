@@ -5,12 +5,10 @@ from dl.utils import tensor as tensor_utils
 
 
 class RaceDataset(Dataset):
-    def __init__(self, data, eval_every_nth_race, train, seed=1001): 
+    def __init__(self, data, eval_every_nth_race, train): 
         self._data = data
         self._train = train
-        
-        self._rng = np.random.default_rng(seed)
-        
+                
         race_ids = np.array(data.race_ids)
         arg = np.arange(len(race_ids))
         
@@ -84,26 +82,14 @@ class RaceDataset(Dataset):
             
         current_trg = outcome
         current_trg = np.array(current_trg)
-        
-        if self._train:
-            # we shuffle the runs around in order to not have the model learn positions
-            permutation = self._rng.permutation(len(current_src))
-            
-            current_src = current_src[permutation]
-            current_seq = current_seq[permutation]
-            current_trg = current_trg[permutation]
-                        
-            permutation = self._rng.permutation(len(past_src))
-            past_src = past_src[permutation]
-            past_seq = past_seq[permutation]
                             
         return current_src, current_trg, current_seq, past_src, past_seq
     
     @classmethod
     def get_dataloaders(cls, data, eval_every_nth_race, batch_size, seed=1001):
-        train_loader = DataLoader(cls(data, eval_every_nth_race, True, seed=seed), batch_size,
+        train_loader = DataLoader(cls(data, eval_every_nth_race, True), batch_size,
                                   shuffle=True, collate_fn=cls._collate_fn)
-        eval_loader = DataLoader(cls(data, eval_every_nth_race, False, seed=seed), batch_size,
+        eval_loader = DataLoader(cls(data, eval_every_nth_race, False), batch_size,
                                  shuffle=False, collate_fn=cls._collate_fn)
         
         return train_loader, eval_loader
