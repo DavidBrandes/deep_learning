@@ -9,7 +9,7 @@ VALID_RUN_FEATURES = ["win_odds", "finish_time", "lengths_behind", "draw", "decl
                       "result"]
 VALID_RACE_FEATURES = ["distance", "race_class", "prize", "race_no", "surface", "venue", "going"]
 VALID_OTHER_FEATURES = ["race_id", "horse_id", "past_wins", "past_place", "past_races"]
-VALID_SEQUENCE_FEATURES = ["days_past", "horse_index", "race_index", "other_race_horse_index", 
+VALID_SEQUENCE_FEATURES = ["days_past", "horse_index", "race_index", 
                            "days_past_unnormalized", "race_index_unnormalized"]
 
 
@@ -23,8 +23,8 @@ class HKRaceData:
                  current_run_features, past_run_features, race_outcome_features, 
                  race_sequence_features, normalize=True, subsample=None, max_horses_per_race=None, 
                  min_horse_past_races=0, min_past_races=1, only_running_horse_past=False, 
-                 only_distinct_outcomes=True, only_proper_place_races=True,
-                 allow_past_race_correspondence=True, max_race_date_difference=float("inf"), debug=False):
+                 only_distinct_outcomes=True, allow_past_race_correspondence=True,
+                   max_race_date_difference=float("inf"), debug=False):
         self._runs_data = pd.read_csv(runs_data_path)
         self._races_data = pd.read_csv(races_data_path)
         
@@ -37,7 +37,6 @@ class HKRaceData:
         self._min_past_races = min_past_races
         self._horse_past_races = horse_past_races
         self._allow_past_race_correspondence = allow_past_race_correspondence
-        self._only_proper_place_races = only_proper_place_races
         self._max_race_date_difference = max_race_date_difference
         
         self._debug = debug
@@ -48,7 +47,9 @@ class HKRaceData:
         self.race_sequence_features = race_sequence_features
         
         self._fix_data()
+        self._set_all_race_ids()
         self._set_race_ids()
+        self._set_race_past()
         if self._normalize:
             self._normalize_data()
         
@@ -119,8 +120,8 @@ class HKRaceData:
         for feature in VALID_RUN_FEATURES:
             value = self._runs_data[feature]
             self._runs_data[feature] = (value - value.min()) / (value.max() - value.min())
-            
-    def _get_valid_race_ids(self):
+
+    def _set_all_race_ids(self):
         race_ids = self._races_data['race_id'].values
         dates = self._races_data['date'].values
         
@@ -131,28 +132,23 @@ class HKRaceData:
         
         if self._subsample:
             race_ids = race_ids[self._subsample]
+
+        self._all_race_ids = race_ids
             
+    def _set_race_ids(self):
         valid_race_ids = []
         
         max_horses_per_race = 0
         
-        if self._only_proper_place_races:
-            data = self._races_data[self._races_data["place_combination3"].isna()]
-            invalid_race_ids = data["race_id"].to_list()
-        else:
-            invalid_race_ids = []
-        
-        for race_id in race_ids:
+        for race_id in self._all_race_ids:
+            runs = self._get_race_runs_data(race_id)
+            n_runs = len(runs.index)
+
             if self._only_distinct_outcomes:
-                runs = self._get_race_runs_data(race_id)
-                n_runs = len(runs.index)
                 results = runs["result"].to_numpy()
                 
                 if np.sum(results == 1) != 1 or np.sum(results == 2) != 1 or np.sum(results == 3) != 1:
                     continue
-                
-            if race_id in invalid_race_ids:
-                continue
             
             if self._max_horses_per_race and n_runs > self._max_horses_per_race:
                 continue
@@ -162,24 +158,22 @@ class HKRaceData:
             
             valid_race_ids.append(race_id)
             
-        return valid_race_ids, max_horses_per_race
+        self.race_ids = valid_race_ids
+        self.horses_per_race = max_horses_per_race
     
-    def _set_race_ids(self):
-        race_ids, horses_per_race = self._get_valid_race_ids()
-        
-        self.horses_per_race = horses_per_race
-                
+    def _set_race_past(self):
         past_race_ids = {}
-        horse_races = defaultdict(list)
+        horse_past_races = defaultdict(list)
         
         race_horse_features = {}
         horse_wins = defaultdict(lambda: 0)
         horse_place = defaultdict(lambda: 0)
+        horse_races = defaultdict(lambda: 0)
         
         max_date_difference = 1
         max_horse_past_races = 1
         
-        for race_id in race_ids:
+        for race_id in self._all_race_ids:
             runs_data = self._get_race_runs_data(race_id)
             
             race_horse_ids = runs_data['horse_id'].values
@@ -194,7 +188,7 @@ class HKRaceData:
                 race_features[race_horse_id] = {
                     'past_wins': horse_wins[race_horse_id],
                     'past_place': horse_place[race_horse_id],
-                    'past_races': len(horse_races[race_horse_id]),
+                    'past_races': horse_races[race_horse_id],
                 }
                 
                 # update old features
@@ -205,15 +199,18 @@ class HKRaceData:
                  
                 if race_horse_data["result"].item() <= 3:
                     horse_place[race_horse_id] += 1
-                                
+
+                horse_races[race_horse_id] += 1
+
+                # collect this horses past races          
                 race_horse_past_races = []
                 
                 max_race_past_difference = 0
                 
-                for past_race_id in horse_races[race_horse_id][::-1]:
+                for past_race_id in horse_past_races[race_horse_id][::-1]:
                     date_difference = self._get_delta_race_date(past_race_id, race_date)
                     if len(race_horse_past_races) >= self._horse_past_races or \
-                        date_difference > self._max_race_date_difference:
+                       date_difference > self._max_race_date_difference:
                            
                         break
                     
@@ -224,12 +221,13 @@ class HKRaceData:
                 
                 value[race_horse_id] = race_horse_past_races
                 
-                horse_races[race_horse_id].append(race_id)
+                horse_past_races[race_horse_id].append(race_id)
                 
             race_horse_features[race_id] = race_features
                 
             if sum([len(v) for v in value.values()]) >= self._min_past_races and \
-                np.all([len(v) >= self._min_horse_past_races for v in value.values()]):
+               np.all([len(v) >= self._min_horse_past_races for v in value.values()]) and \
+               race_id in self.race_ids:
                     
                 past_race_ids[race_id] = value
                 
@@ -239,18 +237,16 @@ class HKRaceData:
                 
                 if max_race_past_difference > max_date_difference:
                     max_date_difference = max_race_past_difference
-                    
-        # TODO normalize past wins
-                
+                                    
         self._past_race_ids = past_race_ids
-        self._race_horse_features = race_horse_features
         self.race_ids = list(past_race_ids.keys())
+        self._race_horse_features = race_horse_features
         
         self._max_date_difference = max_date_difference
         self._max_horse_past_races = max_horse_past_races
         self._max_past_wins = max(horse_wins.values())
         self._max_past_place = max(horse_place.values())
-        self._max_past_races = max([len(races) for races in horse_races.values()])
+        self._max_past_races = max(horse_races.values())
     
     def _get_run_data(self, race_id, horse_id):
         runs = self._get_race_runs_data(race_id)
@@ -345,7 +341,12 @@ class HKRaceData:
                 values.append(self._get_delta_race_date(other_race_id, base_race_date))
                 
             elif feature == "horse_index":
-                values.append(base_horse_index)
+                if other_race_horse_index == 0:
+                    value = base_horse_index + 1
+                else:
+                    value = 0
+                    
+                values.append(value)
                 
             elif feature == "race_index":
                 index = base_race_index
@@ -355,9 +356,6 @@ class HKRaceData:
                 
             elif feature == "race_index_unnormalized":
                 values.append(base_race_index)
-                
-            elif feature == "other_race_horse_index":
-                values.append(other_race_horse_index)
                 
         return values
         

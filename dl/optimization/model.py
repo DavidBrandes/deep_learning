@@ -79,7 +79,7 @@ class ModelOptimizer:
                     
                     optimizer.step()
                         
-                    pgbar.set_postfix({"Loss": f"{loss.item():.4e}"})
+                    pgbar.set_postfix({"Loss": f"{(unweighted_loss.item()/weight):.4e}"})
                     accum_loss.append(unweighted_loss.item())
                     accum_weight.append(weight)
                     if self._writer:
@@ -104,7 +104,7 @@ class ModelOptimizer:
                         outp = self._model(inpt)
                         loss, unweighted_loss, weight = self._criterion(outp, trg)
                         
-                        pgbar.set_postfix({"Loss": f"{loss.item():.4e}"})
+                        pgbar.set_postfix({"Loss": f"{(unweighted_loss.item()/weight):.4e}"})
                         accum_loss.append(unweighted_loss.item())
                         accum_weight.append(weight)
                         if self._writer:
