@@ -14,9 +14,9 @@ setup(
         'numpy',
         'pandas',
         'pillow',
-	'tensorboard'
         'torch',
         'torchvision',
+	'tensorboard',
 	'tqdm',
 	'scipy'
     ],
