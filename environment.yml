@@ -2,12 +2,14 @@ name: dl
 dependencies:
   - python=3.11
   - pip
-  - matplotlib=3.7.1
-  - numpy=1.25.2
-  - pillow=9.4.0
-  - pytorch=2.0.1
-  - torchvision=0.15.2
-  - tqdm=4.66.1
-  -.tensorboard=2.14.0
+  - matplotlib
+  - numpy
+  - pandas
+  - pillow
+  - pytorch
+  - torchvision
+  - tqdm
+  - tensorboard
+  - scipy
   - pip:
-    - kornia==0.7.0
+    - kornia
