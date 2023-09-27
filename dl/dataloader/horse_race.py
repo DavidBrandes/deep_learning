@@ -1,5 +1,6 @@
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
+import torch
 
 from dl.utils import tensor as tensor_utils, linalg as linalg_utils, combinatorics as combinatorics_utils
 
@@ -48,11 +49,11 @@ class RaceDataset(Dataset):
         current_src = tensor_utils.tensor(current_src)
         current_trg = tensor_utils.tensor(current_trg)
         current_seq = tensor_utils.tensor(current_seq)
-        current_padding_mask = tensor_utils.tensor(current_padding_mask, dtype=bool)
+        current_padding_mask = tensor_utils.tensor(current_padding_mask, dtype=torch.bool)
         past_src = tensor_utils.tensor(past_src)
         past_seq = tensor_utils.tensor(past_seq)
-        past_padding_mask = tensor_utils.tensor(past_padding_mask, dtype=bool)
-        past_mask = tensor_utils.tensor(past_mask, dtype=bool)
+        past_padding_mask = tensor_utils.tensor(past_padding_mask, dtype=torch.bool)
+        past_mask = tensor_utils.tensor(past_mask, dtype=torch.bool)
                 
         inpt = (current_src, current_seq, current_padding_mask, past_src, past_seq, past_mask, past_padding_mask)
         trg = (current_trg, current_padding_mask.clone())

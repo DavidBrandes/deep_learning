@@ -33,7 +33,7 @@ class SequenceEmbedding(nn.Module):
         arg = seq[..., 0] != 0
 
         x = torch.zeros(seq.shape[:2] + (self.horses_per_race,), dtype=seq.dtype)
-        x[arg, seq[arg][..., 0].type(torch.long)] = 1
+        x[arg, seq[arg][..., 0].type(torch.long) - 1] = 1
         
         x = torch.cat([x, seq[..., 1:]], dim=-1)
         
@@ -48,7 +48,6 @@ class FeatureEmbedding(nn.Module):
         
     def forward(self, src, seq):
         seq = self.sequence_embedding(seq)
-        print(seq)
         x = torch.cat([src, seq], dim=-1)
         
         return x

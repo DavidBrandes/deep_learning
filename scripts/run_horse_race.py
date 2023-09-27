@@ -40,9 +40,9 @@ data = HKRaceData("/Users/david/Downloads/hk_horse_race_data/runs.csv",
 
 train_loader, val_loader, test_loader = RaceDataset.get_dataloaders(data, split, batch_size)
 
-model_optimizer = ModelOptimizer(model, train_loader, val_loader, criterion, optimizer, 
-                                 writer=writer, optimizer_kwargs=optimizer_kwargs, epochs=epochs)
-model_optimizer()
+model_optimizer = ModelOptimizer(criterion, optimizer, writer=writer, 
+                                 optimizer_kwargs=optimizer_kwargs, epochs=epochs)
+model_optimizer(model, train_loader, val_loader)
 
 eval_data = model_optimizer.evaluate(val_loader)
 evaluate(eval_data, race_outcome_features)

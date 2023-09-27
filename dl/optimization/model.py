@@ -6,12 +6,9 @@ from dl.optimization.context import RunContext
 
 
 class ModelOptimizer:
-    def __init__(self, model, train_loader, val_loader, criterion, optimizer, optimizer_kwargs={},
+    def __init__(self, criterion, optimizer, optimizer_kwargs={},
                  epochs=250, callback=None, writer=None, device="cpu"):
-        self._model = model.to(device)
         self._optimizer = optimizer
-        self._train_loader = train_loader
-        self._val_loader = val_loader
         self._criterion = criterion
 
         self._optimizer_kwargs = optimizer_kwargs
@@ -21,25 +18,25 @@ class ModelOptimizer:
         self._device = device
         self._writer = writer
         
-    def evaluate(self, loader):
+    def evaluate(self, model, loader):
         result = []
         
         print("Evaluating")
         
-        self._model.eval()
+        model = model.to(self.device).eval()
         
         for batch in tqdm(loader, desc="  Evaluating", leave=False):
             inpt, trg = self._unpack(batch)
-            outp = self._model(inpt)
+            outp = model(inpt)
             
             result.append((outp.to("cpu"), tuple(el.to('cpu') for el in trg)))
             
-        self._model.train()
+        model = model.to("cpu").train()
         
         return result
         
-    def _detach(self):
-        return deepcopy(self._model).to("cpu").eval()
+    def _detach(self, model):
+        return deepcopy(model).to("cpu").eval()
     
     def _unpack(self, x):
         inpt, trg = x
@@ -49,10 +46,11 @@ class ModelOptimizer:
         
         return inpt, trg
     
-    def __call__(self):
-        optimizer = self._optimizer(self._model.parameters(), **self._optimizer_kwargs)
+    def __call__(self, model, train_loader, val_loader):
+        model = model.to(self._device).train()
+        optimizer = self._optimizer(model.parameters(), **self._optimizer_kwargs)
         
-        best_model = self._detach()
+        best_model = self._detach(model)
         best_eval_loss = last_eval_loss = float("inf")
         last_train_loss = float("inf")
         epoch = 0
@@ -66,14 +64,13 @@ class ModelOptimizer:
                 
                 accum_loss, accum_weight = [], []
                 
-                for index, batch in enumerate(pgbar := tqdm(self._train_loader, 
-                                                            desc="    Training",
+                for index, batch in enumerate(pgbar := tqdm(train_loader, desc="    Training",
                                                             leave=False)):
                     inpt, trg = self._unpack(batch)
                     
                     optimizer.zero_grad()
                     
-                    outp = self._model(inpt)
+                    outp = model(inpt)
                     loss, unweighted_loss, weight = self._criterion(outp, trg)
                     loss.backward()
                     
@@ -91,17 +88,16 @@ class ModelOptimizer:
                 print(f"    Train Loss {loss_train:.4e}, Step Size {diff:.4e}")
                 last_train_loss = loss_train
                 
-                self._model.eval()
+                model.eval()
                 
                 with torch.no_grad():
                     accum_loss, accum_weight = [], []
                     
-                    for index, batch in enumerate(pgbar := tqdm(self._val_loader, 
-                                                                desc="    Validating",
+                    for index, batch in enumerate(pgbar := tqdm(val_loader, desc="    Validating",
                                                                 leave=False)):
                         inpt, trg = self._unpack(batch)
                         
-                        outp = self._model(inpt)
+                        outp = model(inpt)
                         loss, unweighted_loss, weight = self._criterion(outp, trg)
                         
                         pgbar.set_postfix({"Loss": f"{(unweighted_loss.item()/weight):.4e}"})
@@ -121,12 +117,12 @@ class ModelOptimizer:
                     
                     if loss < best_eval_loss:
                         best_eval_loss = loss
-                        best_model = self._detach()
+                        best_model = self._detach(model)
                         
                         if self._callback:
                             self._callback(epoch, loss, best_model)
                             
-                self._model.train()
+                model.train()
                             
         print(f"Final Loss {last_eval_loss:.4e}")
 
